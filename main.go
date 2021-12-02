@@ -22,14 +22,16 @@ import (
 // go run main.go 2>/dev/null
 
 type matchInfoStruct struct {
-	Map      string `json:"map"`
-	Rounds   uint8  `json:"rounds"`
-	Duration uint32 `json:"duration"`
-	Won      bool   `json:"won"`
+	Map       string `json:"map"`
+	Rounds    uint8  `json:"rounds"`
+	StartedAt uint64 `json:"started_at"`
+	Duration  uint32 `json:"duration"`
+	Won       bool   `json:"won"`
 }
 type playerStatsStruct struct {
-	Kills  uint32 `json:"kills"`
-	Deaths uint32 `json:"deaths"`
+	Kills       uint32            `json:"kills"`
+	Deaths      uint32            `json:"deaths"`
+	WeaponStats map[string]uint32 `json:"weapon_stats"`
 }
 
 func main() {
@@ -69,22 +71,25 @@ func main() {
 		switch m := message.(type) {
 		case insurgencylog.LoadingMap:
 			matchInfo.Map = m.Map
+			matchInfo.StartedAt = uint64(m.Time.Unix())
 		case insurgencylog.PlayerKill:
 			if m.Attacker.SteamID == "BOT" && m.Victim.SteamID != "BOT" {
-				if stats, ok := playerStats[m.Victim.SteamID]; !ok {
-					playerStats[m.Victim.SteamID] = stats
-				} else {
-					stats.Kills++
-					playerStats[m.Victim.SteamID] = stats
-				}
+				stats, _ := playerStats[m.Victim.SteamID]
+				stats.Deaths++
+				playerStats[m.Victim.SteamID] = stats
 			}
 			if m.Victim.SteamID == "BOT" && m.Attacker.SteamID != "BOT" {
-				if stats, ok := playerStats[m.Attacker.SteamID]; !ok {
-					playerStats[m.Attacker.SteamID] = stats
-				} else {
-					stats.Kills++
-					playerStats[m.Attacker.SteamID] = stats
+				stats, _ := playerStats[m.Attacker.SteamID]
+				stats.Kills++
+
+				if stats.WeaponStats == nil {
+					stats.WeaponStats = make(map[string]uint32)
 				}
+				weaponStats, _ := stats.WeaponStats[m.Weapon]
+				weaponStats++
+				stats.WeaponStats[m.Weapon] = weaponStats
+
+				playerStats[m.Attacker.SteamID] = stats
 			}
 		}
 
