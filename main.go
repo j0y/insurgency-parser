@@ -91,6 +91,13 @@ func main() {
 
 				playerStats[m.Attacker.SteamID] = stats
 			}
+		case insurgencylog.RoundWin:
+			if m.Team == insurgencylog.TeamSecurity {
+				matchInfo.Rounds++
+			} else if m.Team == insurgencylog.TeamInsurgent {
+				matchInfo.Won = true
+				matchInfo.Duration = uint32(uint64(m.Time.Unix()) - matchInfo.StartedAt)
+			}
 		}
 
 		// next line
