@@ -2,9 +2,14 @@ package main
 
 import (
 	"bufio"
+	"database/sql"
 	"fmt"
+	"github.com/joho/godotenv"
+	_ "github.com/lib/pq"
+	"log"
 	insurgencylog "my.com/insurgency-log"
 	"os"
+	"regexp"
 )
 
 // Usage:
@@ -27,6 +32,7 @@ type matchInfoStruct struct {
 	StartedAt uint64 `json:"started_at"`
 	Duration  uint32 `json:"duration"`
 	Won       bool   `json:"won"`
+	Ip        string `json:"ip"`
 }
 type playerStatsStruct struct {
 	Kills       uint32            `json:"kills"`
@@ -35,13 +41,28 @@ type playerStatsStruct struct {
 }
 
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	var matchInfo matchInfoStruct
 	playerStats := make(map[string]playerStatsStruct)
 
 	var file *os.File
-	var err error
 
-	file, err = os.Open("example.log")
+	filename := "91.105.183.199_1638288928.log"
+	file, err = os.Open(filename)
+
+	re := regexp.MustCompile(`^[0-9,.]*`)
+
+	ip := re.FindString(filename)
+	if len(ip) == 0 {
+		fmt.Println("ip not found")
+		os.Exit(1)
+	}
+	matchInfo.Ip = ip
+
 	/*if len(os.Args) < 2 {
 		file = os.Stdin
 	} else {
@@ -104,6 +125,26 @@ func main() {
 		l, _, err = r.ReadLine()
 	}
 
-	fmt.Printf("%v", matchInfo)
-	fmt.Printf("%v", playerStats)
+	db, err := sql.Open("postgres", os.Getenv("PSQL_CONN"))
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+
+	err = db.Ping()
+	if err != nil {
+		panic(err)
+	}
+
+	sqlStatement := `
+INSERT INTO matches (ip, started_at, map, rounds, duration, won)
+VALUES ($1, $2, $3, $4, $5, $6)
+RETURNING id`
+	id := 0
+	err = db.QueryRow(sqlStatement, matchInfo.Ip, matchInfo.StartedAt, matchInfo.Map, matchInfo.Rounds, matchInfo.Duration, matchInfo.Won).Scan(&id)
+	if err != nil {
+		fmt.Printf("%v", err)
+		return
+	}
+	fmt.Println("New record ID is:", id)
 }
