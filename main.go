@@ -185,16 +185,7 @@ func parseFile(pathFilename string) {
 		return
 	}
 
-	sqlStatement := `
-INSERT INTO matches (ip, started_at, map, rounds, duration, won)
-VALUES ($1, $2, $3, $4, $5, $6)
-ON CONFLICT(ip, started_at, map) DO UPDATE SET rounds = $4, duration = $5, won = $6
-RETURNING id`
-	var matchID uint32
-	err = db.QueryRow(sqlStatement, matchInfo.Ip, matchInfo.StartedAt, matchInfo.Map, matchInfo.Rounds, matchInfo.Duration, matchInfo.Won).Scan(&matchID)
-	if err != nil {
-		log.Fatal(err)
-	}
+	matchID := getOrCreateMatchID(matchInfo)
 
 	for s, statsStruct := range playerStats {
 		userID, err := gosteamconv.SteamStringToInt32(s)
@@ -225,6 +216,25 @@ RETURNING id`
 	}
 
 	fmt.Println("Finished processing match ", matchID)
+}
+
+func getOrCreateMatchID(matchInfo matchInfoStruct) uint32 {
+	selectQuery := `SELECT id from matches where ip = $1 AND started_at = $2 AND map = $3`
+	insertQuery := `INSERT INTO matches (ip, started_at, map, rounds, duration, won) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`
+
+	var matchID uint32
+	err := db.QueryRow(selectQuery, matchInfo.Ip, matchInfo.StartedAt, matchInfo.Map).Scan(&matchID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			err = db.QueryRow(insertQuery, matchInfo.Ip, matchInfo.StartedAt, matchInfo.Map, matchInfo.Rounds, matchInfo.Duration, matchInfo.Won).Scan(&matchID)
+			if err != nil {
+				log.Fatal(err)
+			}
+		} else {
+			log.Fatal(err)
+		}
+	}
+	return matchID
 }
 
 func checkOrCreateUser(userID int, name string) error {
