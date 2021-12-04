@@ -170,9 +170,18 @@ func parseFile(pathFilename string) {
 				matchInfo.Duration = uint32(uint64(m.Time.Unix()) - matchInfo.StartedAt)
 			}
 		case insurgencylog.NextLevel:
-			if matchInfo.Duration == 0 {
+			if matchInfo.Duration == 0 && m.Level != "" {
 				//changing map without winning
 				matchInfo.Duration = uint32(uint64(m.Time.Unix()) - matchInfo.StartedAt)
+			}
+		case insurgencylog.ServerMessage:
+			if m.Text == "quit" || m.Text == "restart" {
+				if matchInfo.Duration == 0 {
+					//changing map without winning
+					matchInfo.Duration = uint32(uint64(m.Time.Unix()) - matchInfo.StartedAt)
+				}
+				//match over
+				break
 			}
 		}
 
