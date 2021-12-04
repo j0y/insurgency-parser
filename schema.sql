@@ -16,7 +16,7 @@ create table "users"
     id               bigint PRIMARY KEY,
     kills            integer   NOT NULL default 0,
     deaths           integer   NOT NULL default 0,
-    kd               numeric(10, 2),
+    kd               numeric(10, 2) DEFAULT NULL,
     all_weapon_stats jsonb     NOT NULL default '{}'::jsonb,
     inserted_at      bigint   NOT NULL DEFAULT date_part('epoch'::text, now())
 )
@@ -30,7 +30,8 @@ create table "user_stats"
     weapon_stats jsonb   NOT NULL default '{}'::jsonb,
 
     FOREIGN KEY (match_id) REFERENCES matches (id),
-    FOREIGN KEY (user_id) REFERENCES users (id)
+    FOREIGN KEY (user_id) REFERENCES users (id),
+    UNIQUE (match_id, user_id)
 )
 
 

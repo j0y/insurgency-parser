@@ -3,7 +3,11 @@ package main
 import (
 	"bufio"
 	"database/sql"
+	"database/sql/driver"
+	"encoding/json"
+	"errors"
 	"fmt"
+	"github.com/MrWaggel/gosteamconv"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 	"log"
@@ -34,10 +38,18 @@ type matchInfoStruct struct {
 	Won       bool   `json:"won"`
 	Ip        string `json:"ip"`
 }
+
+type weaponStatsStruct map[string]uint32
+
 type playerStatsStruct struct {
 	Kills       uint32            `json:"kills"`
 	Deaths      uint32            `json:"deaths"`
-	WeaponStats map[string]uint32 `json:"weapon_stats"`
+	WeaponStats weaponStatsStruct `json:"weapon_stats"`
+}
+
+// Value Returns the JSON-encoded representation
+func (a weaponStatsStruct) Value() (driver.Value, error) {
+	return json.Marshal(a)
 }
 
 func main() {
@@ -58,8 +70,7 @@ func main() {
 
 	ip := re.FindString(filename)
 	if len(ip) == 0 {
-		fmt.Println("ip not found")
-		os.Exit(1)
+		log.Fatal("ip not found")
 	}
 	matchInfo.Ip = ip
 
@@ -139,12 +150,63 @@ func main() {
 	sqlStatement := `
 INSERT INTO matches (ip, started_at, map, rounds, duration, won)
 VALUES ($1, $2, $3, $4, $5, $6)
+ON CONFLICT(ip, started_at, map) DO UPDATE SET rounds = $4, duration = $5, won = $6
 RETURNING id`
-	id := 0
-	err = db.QueryRow(sqlStatement, matchInfo.Ip, matchInfo.StartedAt, matchInfo.Map, matchInfo.Rounds, matchInfo.Duration, matchInfo.Won).Scan(&id)
+	var matchID uint32
+	err = db.QueryRow(sqlStatement, matchInfo.Ip, matchInfo.StartedAt, matchInfo.Map, matchInfo.Rounds, matchInfo.Duration, matchInfo.Won).Scan(&matchID)
 	if err != nil {
-		fmt.Printf("%v", err)
-		return
+		log.Fatal(err)
 	}
-	fmt.Println("New record ID is:", id)
+
+	for s, statsStruct := range playerStats {
+		userID, err := gosteamconv.SteamStringToInt32(s)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		err = checkOrCreateUser(db, userID)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		err = insertUserStats(db, matchID, userID, statsStruct)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	fmt.Println("Finished processing match ", matchID)
+}
+
+func checkOrCreateUser(db *sql.DB, userID int) error {
+	userQuery := `SELECT 1 from users where id = $1`
+	insertQuery := `INSERT INTO users (id) VALUES ($1)`
+
+	var dummy int
+	err := db.QueryRow(userQuery, userID).Scan(&dummy)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			_, err = db.Exec(insertQuery, userID)
+			if err != nil {
+				return err
+			}
+		} else {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func insertUserStats(db *sql.DB, matchID uint32, userID int, stats playerStatsStruct) error {
+	insertQuery := `INSERT INTO user_stats (match_id, user_id, kills, deaths, weapon_stats) 
+VALUES ($1, $2, $3, $4, $5)
+ON CONFLICT(match_id, user_id) DO UPDATE SET kills = $3, deaths = $4, weapon_stats = $5;`
+
+	_, err := db.Exec(insertQuery, matchID, userID, stats.Kills, stats.Deaths, stats.WeaponStats)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
