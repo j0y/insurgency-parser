@@ -13,6 +13,7 @@ import (
 	"log"
 	insurgencylog "my.com/insurgency-log"
 	"os"
+	"path/filepath"
 	"regexp"
 )
 
@@ -63,14 +64,15 @@ func main() {
 
 	var file *os.File
 
-	filename := os.Args[1]
-	file, err = os.Open(filename)
+	pathFilename := os.Args[1]
+	file, err = os.Open(pathFilename)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	re := regexp.MustCompile(`^[0-9,.]*`)
 
+	filename := filepath.Base(pathFilename)
 	ip := re.FindString(filename)
 	if len(ip) == 0 {
 		log.Fatal("ip not found")
