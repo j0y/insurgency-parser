@@ -60,22 +60,17 @@ func main() {
 				}
 
 				if filepath.Ext(path) != ".log" {
-					fmt.Println("skipping non log file ", path)
 					return nil
 				}
 
 				if _, ok := parsedFiles[path]; ok {
-					fmt.Println("skipping parsed file in map ", path)
-
 					return nil
 				}
 
 				if _, err := os.Stat(path + ".parsed"); errors.Is(err, os.ErrNotExist) {
 					// file does not exist
-					fmt.Println("parsing file ", path)
 					parseFile(path)
 				} else {
-					fmt.Println("skipping parsed with parsed file ", path)
 					parsedFiles[path] = struct{}{}
 				}
 
