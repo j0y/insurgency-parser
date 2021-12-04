@@ -15,21 +15,8 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"time"
 )
-
-// Usage:
-//
-// From file:
-// go run main.go example.log
-//
-// From STDIN:
-// cat example.log | go run main.go
-//
-// To File:
-// go run main.go > out.txt
-//
-// Omit errors:
-// go run main.go 2>/dev/null
 
 type matchInfoStruct struct {
 	Map       string `json:"map"`
@@ -57,22 +44,59 @@ func (a weaponStatsStruct) Value() (driver.Value, error) {
 	return json.Marshal(a)
 }
 
+var parsedFiles = make(map[string]struct{})
+
 func main() {
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	var matchInfo matchInfoStruct
-	playerStats := make(map[string]playerStatsStruct)
+	for {
+		err := filepath.Walk(".",
+			func(path string, info os.FileInfo, err error) error {
+				if err != nil {
+					return err
+				}
 
-	var file *os.File
+				if filepath.Ext(path) != ".log" {
+					fmt.Println("skipping non log file ", path)
+					return nil
+				}
 
-	pathFilename := os.Args[1]
-	file, err = os.Open(pathFilename)
+				if _, ok := parsedFiles[path]; ok {
+					fmt.Println("skipping parsed file in map ", path)
+
+					return nil
+				}
+
+				if _, err := os.Stat(path + ".parsed"); errors.Is(err, os.ErrNotExist) {
+					// file does not exist
+					fmt.Println("parsing file ", path)
+					parseFile(path)
+				} else {
+					fmt.Println("skipping parsed with parsed file ", path)
+					parsedFiles[path] = struct{}{}
+				}
+
+				return nil
+			})
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		time.Sleep(5 * time.Minute)
+	}
+}
+
+func parseFile(pathFilename string) {
+	file, err := os.Open(pathFilename)
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	var matchInfo matchInfoStruct
+	playerStats := make(map[string]playerStatsStruct)
 
 	re := regexp.MustCompile(`^[0-9,.]*`)
 
@@ -155,6 +179,7 @@ func main() {
 
 	if len(matchInfo.Map) == 0 {
 		log.Printf("map is empty, skipping %s\n", filename)
+		return
 	}
 
 	sqlStatement := `
