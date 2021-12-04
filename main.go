@@ -50,6 +50,9 @@ type playerStatsStruct struct {
 
 // Value Returns the JSON-encoded representation
 func (a weaponStatsStruct) Value() (driver.Value, error) {
+	if len(a) == 0 {
+		return "{}", nil
+	}
 	return json.Marshal(a)
 }
 
