@@ -165,6 +165,11 @@ func parseFile(pathFilename string) {
 				matchInfo.Won = true
 				matchInfo.Duration = uint32(uint64(m.Time.Unix()) - matchInfo.StartedAt)
 			}
+		case insurgencylog.NextLevel:
+			if matchInfo.Duration == 0 {
+				//changing map without winning
+				matchInfo.Duration = uint32(uint64(m.Time.Unix()) - matchInfo.StartedAt)
+			}
 		}
 
 		// next line
