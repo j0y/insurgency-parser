@@ -94,10 +94,11 @@ func main() {
 		message, errParse := insurgencylog.Parse(string(l))
 		if errParse != nil {
 			// print parse errors to stderr
-			fmt.Fprintf(os.Stderr, "ERROR: %s", insurgencylog.ToJSON(message))
-		} else {
-			// print to stdout
-			//fmt.Fprintf(os.Stdout, "%s", insurgencylog.ToJSON(m))
+			_, err = fmt.Fprintf(os.Stderr, "ERROR: %s", insurgencylog.ToJSON(message))
+			if err != nil {
+				fmt.Println(insurgencylog.ToJSON(message))
+				fmt.Println(err)
+			}
 		}
 
 		switch m := message.(type) {
@@ -105,12 +106,12 @@ func main() {
 			matchInfo.Map = m.Map
 			matchInfo.StartedAt = uint64(m.Time.Unix())
 		case insurgencylog.PlayerKill:
-			if m.Attacker.SteamID == "BOT" && m.Victim.SteamID != "BOT" {
+			if m.Attacker.SteamID == insurgencylog.PlayerBot && m.Victim.SteamID != insurgencylog.PlayerBot {
 				stats, _ := playerStats[m.Victim.SteamID]
 				stats.Deaths++
 				playerStats[m.Victim.SteamID] = stats
 			}
-			if m.Victim.SteamID == "BOT" && m.Attacker.SteamID != "BOT" {
+			if m.Victim.SteamID == insurgencylog.PlayerBot && m.Attacker.SteamID != insurgencylog.PlayerBot {
 				stats, _ := playerStats[m.Attacker.SteamID]
 				stats.Kills++
 
