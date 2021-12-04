@@ -63,8 +63,11 @@ func main() {
 
 	var file *os.File
 
-	filename := "91.105.183.199_1638288928.log"
+	filename := os.Args[1]
 	file, err = os.Open(filename)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	re := regexp.MustCompile(`^[0-9,.]*`)
 
@@ -79,11 +82,6 @@ func main() {
 	} else {
 		file, err = os.Open(os.Args[1])
 	}*/
-
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
 
 	r := bufio.NewReader(file)
 
