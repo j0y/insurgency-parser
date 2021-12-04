@@ -14,6 +14,7 @@ create table "matches"
 create table "users"
 (
     id               bigint PRIMARY KEY,
+    name             VARCHAR(32) NOT NULL,
     kills            integer   NOT NULL default 0,
     deaths           integer   NOT NULL default 0,
     kd               numeric(10, 2) DEFAULT NULL,

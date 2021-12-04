@@ -43,6 +43,7 @@ type matchInfoStruct struct {
 type weaponStatsStruct map[string]uint32
 
 type playerStatsStruct struct {
+	Name        string            `json:"name"`
 	Kills       uint32            `json:"kills"`
 	Deaths      uint32            `json:"deaths"`
 	WeaponStats weaponStatsStruct `json:"weapon_stats"`
@@ -111,11 +112,17 @@ func main() {
 		case insurgencylog.PlayerKill:
 			if m.Attacker.SteamID == insurgencylog.PlayerBot && m.Victim.SteamID != insurgencylog.PlayerBot {
 				stats, _ := playerStats[m.Victim.SteamID]
+				if len(stats.Name) == 0 {
+					stats.Name = m.Victim.Name
+				}
 				stats.Deaths++
 				playerStats[m.Victim.SteamID] = stats
 			}
 			if m.Victim.SteamID == insurgencylog.PlayerBot && m.Attacker.SteamID != insurgencylog.PlayerBot {
 				stats, _ := playerStats[m.Attacker.SteamID]
+				if len(stats.Name) == 0 {
+					stats.Name = m.Attacker.Name
+				}
 				stats.Kills++
 
 				if stats.WeaponStats == nil {
@@ -168,7 +175,7 @@ RETURNING id`
 			log.Fatal(err)
 		}
 
-		err = checkOrCreateUser(db, userID)
+		err = checkOrCreateUser(db, userID, statsStruct.Name)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -182,15 +189,15 @@ RETURNING id`
 	fmt.Println("Finished processing match ", matchID)
 }
 
-func checkOrCreateUser(db *sql.DB, userID int) error {
+func checkOrCreateUser(db *sql.DB, userID int, name string) error {
 	userQuery := `SELECT 1 from users where id = $1`
-	insertQuery := `INSERT INTO users (id) VALUES ($1)`
+	insertQuery := `INSERT INTO users (id, name) VALUES ($1, $2)`
 
 	var dummy int
 	err := db.QueryRow(userQuery, userID).Scan(&dummy)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			_, err = db.Exec(insertQuery, userID)
+			_, err = db.Exec(insertQuery, userID, name)
 			if err != nil {
 				return err
 			}
