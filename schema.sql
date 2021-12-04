@@ -57,3 +57,13 @@ update users
 set kd = 9999
 where kills > 100 and deaths = 0
 
+update users set all_weapon_stats = stats.agg from (
+select user_id, jsonb_object_agg(k, val) as agg
+from (
+         select user_id, k, sum(v::numeric) as val
+         from match_user_stats
+                  join lateral jsonb_each_text(weapon_stats) j(k, v) on true
+         group by user_id, k
+     ) tt
+group by user_id) stats
+where user_id = id
