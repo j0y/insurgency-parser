@@ -185,6 +185,17 @@ RETURNING id`
 		}
 	}
 
+	if matchInfo.Duration > 0 {
+		f, err := os.Create(pathFilename + ".parsed")
+		if err != nil {
+			log.Fatal(err)
+		}
+		err = f.Close()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
 	fmt.Println("Finished processing match ", matchID)
 }
 
