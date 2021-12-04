@@ -200,7 +200,7 @@ func checkOrCreateUser(db *sql.DB, userID int) error {
 }
 
 func insertUserStats(db *sql.DB, matchID uint32, userID int, stats playerStatsStruct) error {
-	insertQuery := `INSERT INTO user_stats (match_id, user_id, kills, deaths, weapon_stats) 
+	insertQuery := `INSERT INTO match_user_stats (match_id, user_id, kills, deaths, weapon_stats) 
 VALUES ($1, $2, $3, $4, $5)
 ON CONFLICT(match_id, user_id) DO UPDATE SET kills = $3, deaths = $4, weapon_stats = $5;`
 

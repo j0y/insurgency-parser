@@ -21,7 +21,7 @@ create table "users"
     inserted_at      bigint   NOT NULL DEFAULT date_part('epoch'::text, now())
 )
 
-create table "user_stats"
+create table "match_user_stats"
 (
     match_id     integer NOT NULL,
     user_id      bigint  NOT NULL,
@@ -29,8 +29,8 @@ create table "user_stats"
     deaths       integer NOT NULL default 0,
     weapon_stats jsonb   NOT NULL default '{}'::jsonb,
 
-    FOREIGN KEY (match_id) REFERENCES matches (id),
-    FOREIGN KEY (user_id) REFERENCES users (id),
+    FOREIGN KEY (match_id) REFERENCES matches (id) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE ON UPDATE CASCADE,
     UNIQUE (match_id, user_id)
 )
 
