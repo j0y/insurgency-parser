@@ -35,3 +35,21 @@ create table "match_user_stats"
 )
 
 
+update users
+set kills = a.total
+    from (select user_id, sum(kills) as total from match_user_stats group by user_id) a
+WHERE users.id = a.user_id;
+
+update users
+set deaths = a.total
+    from (select user_id, sum(deaths) as total from match_user_stats group by user_id) a
+WHERE users.id = a.user_id;
+
+update users
+set kd = cast(kills as decimal)/deaths
+where kills > 100 and deaths != 0;
+
+update users
+set kd = 9999
+where kills > 100 and deaths = 0
+
