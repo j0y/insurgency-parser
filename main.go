@@ -45,12 +45,19 @@ func (a weaponStatsStruct) Value() (driver.Value, error) {
 }
 
 var parsedFiles = make(map[string]struct{})
+var db *sql.DB
 
 func main() {
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	db, err = sql.Open("postgres", os.Getenv("PSQL_CONN"))
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
 
 	for {
 		err := filepath.Walk(".",
@@ -79,6 +86,8 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
+
+		runUserAllScoreUpdate()
 
 		time.Sleep(5 * time.Minute)
 	}
@@ -171,12 +180,6 @@ func parseFile(pathFilename string) {
 		l, _, err = r.ReadLine()
 	}
 
-	db, err := sql.Open("postgres", os.Getenv("PSQL_CONN"))
-	if err != nil {
-		panic(err)
-	}
-	defer db.Close()
-
 	if len(matchInfo.Map) == 0 {
 		log.Printf("map is empty, skipping %s\n", filename)
 		return
@@ -199,12 +202,12 @@ RETURNING id`
 			log.Fatal(err)
 		}
 
-		err = checkOrCreateUser(db, userID, statsStruct.Name)
+		err = checkOrCreateUser(userID, statsStruct.Name)
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		err = insertUserStats(db, matchID, userID, statsStruct)
+		err = insertUserStats(matchID, userID, statsStruct)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -224,7 +227,7 @@ RETURNING id`
 	fmt.Println("Finished processing match ", matchID)
 }
 
-func checkOrCreateUser(db *sql.DB, userID int, name string) error {
+func checkOrCreateUser(userID int, name string) error {
 	userQuery := `SELECT 1 from users where id = $1`
 	insertQuery := `INSERT INTO users (id, name) VALUES ($1, $2)`
 
@@ -244,7 +247,7 @@ func checkOrCreateUser(db *sql.DB, userID int, name string) error {
 	return nil
 }
 
-func insertUserStats(db *sql.DB, matchID uint32, userID int, stats playerStatsStruct) error {
+func insertUserStats(matchID uint32, userID int, stats playerStatsStruct) error {
 	insertQuery := `INSERT INTO match_user_stats (match_id, user_id, kills, deaths, weapon_stats) 
 VALUES ($1, $2, $3, $4, $5)
 ON CONFLICT(match_id, user_id) DO UPDATE SET kills = $3, deaths = $4, weapon_stats = $5;`
@@ -255,4 +258,44 @@ ON CONFLICT(match_id, user_id) DO UPDATE SET kills = $3, deaths = $4, weapon_sta
 	}
 
 	return nil
+}
+
+func runUserAllScoreUpdate() {
+	kills := `update users
+set kills = a.total
+    from (select user_id, sum(kills) as total from match_user_stats group by user_id) a
+WHERE users.id = a.user_id;`
+
+	_, err := db.Exec(kills)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	deaths := `update users
+set deaths = a.total
+    from (select user_id, sum(deaths) as total from match_user_stats group by user_id) a
+WHERE users.id = a.user_id;`
+
+	_, err = db.Exec(deaths)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	kd := `update users
+set kd = cast(kills as decimal)/deaths
+where kills > 100 and deaths != 0;`
+
+	_, err = db.Exec(kd)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	kdmax := `update users
+set kd = 9999
+where kills > 100 and deaths = 0`
+
+	_, err = db.Exec(kdmax)
+	if err != nil {
+		log.Fatal(err)
+	}
 }

@@ -22,6 +22,9 @@ create table "users"
     inserted_at      bigint   NOT NULL DEFAULT date_part('epoch'::text, now())
 )
 
+CREATE INDEX idx_users_kills
+    ON users(kills);
+
 create table "match_user_stats"
 (
     match_id     integer NOT NULL,
