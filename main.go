@@ -153,9 +153,8 @@ func main() {
 	}
 	defer db.Close()
 
-	err = db.Ping()
-	if err != nil {
-		panic(err)
+	if len(matchInfo.Map) == 0 {
+		log.Printf("map is empty, skipping %s\n", filename)
 	}
 
 	sqlStatement := `
