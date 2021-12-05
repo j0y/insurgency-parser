@@ -175,7 +175,7 @@ func parseFile(pathFilename string) {
 				matchInfo.Duration = uint32(uint64(m.Time.Unix()) - matchInfo.StartedAt)
 			}
 		case insurgencylog.ServerMessage:
-			if m.Text == "quit" || m.Text == "restart" {
+			if m.Text == "quit" {
 				if matchInfo.Duration == 0 {
 					//changing map without winning
 					matchInfo.Duration = uint32(uint64(m.Time.Unix()) - matchInfo.StartedAt)
