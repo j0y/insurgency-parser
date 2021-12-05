@@ -60,7 +60,7 @@ func main() {
 	defer db.Close()
 
 	for {
-		err := filepath.Walk(".",
+		err := filepath.Walk("logs",
 			func(path string, info os.FileInfo, err error) error {
 				if err != nil {
 					return err
@@ -230,6 +230,7 @@ func parseFile(pathFilename string) {
 func getOrCreateMatchID(matchInfo matchInfoStruct) uint32 {
 	selectQuery := `SELECT id from matches where ip = $1 AND started_at = $2 AND map = $3`
 	insertQuery := `INSERT INTO matches (ip, started_at, map, rounds, duration, won) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`
+	updateQuery := `UPDATE matches SET rounds = $1, duration =$2, won = $3 WHERE id = $4`
 
 	var matchID uint32
 	err := db.QueryRow(selectQuery, matchInfo.Ip, matchInfo.StartedAt, matchInfo.Map).Scan(&matchID)
@@ -243,6 +244,12 @@ func getOrCreateMatchID(matchInfo matchInfoStruct) uint32 {
 			log.Fatal(err)
 		}
 	}
+
+	_, err = db.Exec(updateQuery, matchInfo.Rounds, matchInfo.Duration, matchInfo.Won, matchID)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	return matchID
 }
 
