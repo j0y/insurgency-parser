@@ -33,6 +33,7 @@ type playerStatsStruct struct {
 	Name        string            `json:"name"`
 	Kills       uint32            `json:"kills"`
 	Deaths      uint32            `json:"deaths"`
+	Fratricide  uint32            `json:"fratricide"`
 	WeaponStats weaponStatsStruct `json:"weapon_stats"`
 }
 
@@ -139,7 +140,7 @@ func parseFile(pathFilename string) {
 			matchInfo.StartedAt = getAdjustedTime(m.Time.Unix())
 		case insurgencylog.PlayerKill:
 			if m.Attacker.SteamID == insurgencylog.PlayerBot && m.Victim.SteamID != insurgencylog.PlayerBot {
-				stats, _ := playerStats[m.Victim.SteamID]
+				stats := playerStats[m.Victim.SteamID]
 				if len(stats.Name) == 0 {
 					stats.Name = m.Victim.Name
 				}
@@ -147,7 +148,7 @@ func parseFile(pathFilename string) {
 				playerStats[m.Victim.SteamID] = stats
 			}
 			if m.Victim.SteamID == insurgencylog.PlayerBot && m.Attacker.SteamID != insurgencylog.PlayerBot {
-				stats, _ := playerStats[m.Attacker.SteamID]
+				stats := playerStats[m.Attacker.SteamID]
 				if len(stats.Name) == 0 {
 					stats.Name = m.Attacker.Name
 				}
@@ -160,6 +161,14 @@ func parseFile(pathFilename string) {
 				weaponStats++
 				stats.WeaponStats[m.Weapon] = weaponStats
 
+				playerStats[m.Attacker.SteamID] = stats
+			}
+			if m.Attacker.SteamID != insurgencylog.PlayerBot && m.Victim.SteamID != insurgencylog.PlayerBot {
+				stats := playerStats[m.Attacker.SteamID]
+				if len(stats.Name) == 0 {
+					stats.Name = m.Attacker.Name
+				}
+				stats.Fratricide++
 				playerStats[m.Attacker.SteamID] = stats
 			}
 		case insurgencylog.RoundWin:
@@ -274,11 +283,11 @@ func checkOrCreateUser(userID int, name string) error {
 }
 
 func insertUserStats(matchID uint32, userID int, stats playerStatsStruct) error {
-	insertQuery := `INSERT INTO match_user_stats (match_id, user_id, kills, deaths, weapon_stats) 
-VALUES ($1, $2, $3, $4, $5)
-ON CONFLICT(match_id, user_id) DO UPDATE SET kills = $3, deaths = $4, weapon_stats = $5;`
+	insertQuery := `INSERT INTO match_user_stats (match_id, user_id, kills, deaths, fratricide, weapon_stats) 
+VALUES ($1, $2, $3, $4, $5, $6)
+ON CONFLICT(match_id, user_id) DO UPDATE SET kills = $3, deaths = $4, fratricide = $5, weapon_stats = $6;`
 
-	_, err := db.Exec(insertQuery, matchID, userID, stats.Kills, stats.Deaths, stats.WeaponStats)
+	_, err := db.Exec(insertQuery, matchID, userID, stats.Kills, stats.Deaths, stats.Fratricide, stats.WeaponStats)
 	if err != nil {
 		return err
 	}
@@ -303,6 +312,16 @@ set deaths = a.total
 WHERE users.id = a.user_id;`
 
 	_, err = db.Exec(deaths)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	frats := `update users
+set fratricide = a.total
+    from (select user_id, sum(fratricide) as total from match_user_stats group by user_id) a
+WHERE users.id = a.user_id;`
+
+	_, err = db.Exec(frats)
 	if err != nil {
 		log.Fatal(err)
 	}
