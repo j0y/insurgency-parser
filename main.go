@@ -136,7 +136,7 @@ func parseFile(pathFilename string) {
 		switch m := message.(type) {
 		case insurgencylog.LoadingMap:
 			matchInfo.Map = m.Map
-			matchInfo.StartedAt = uint64(m.Time.Unix())
+			matchInfo.StartedAt = getAdjustedTime(m.Time.Unix())
 		case insurgencylog.PlayerKill:
 			if m.Attacker.SteamID == insurgencylog.PlayerBot && m.Victim.SteamID != insurgencylog.PlayerBot {
 				stats, _ := playerStats[m.Victim.SteamID]
@@ -167,18 +167,18 @@ func parseFile(pathFilename string) {
 				matchInfo.Rounds++
 			} else if m.Team == insurgencylog.TeamInsurgent {
 				matchInfo.Won = true
-				matchInfo.Duration = uint32(uint64(m.Time.Unix()) - matchInfo.StartedAt)
+				matchInfo.Duration = uint32(getAdjustedTime(m.Time.Unix()) - matchInfo.StartedAt)
 			}
 		case insurgencylog.NextLevel:
 			if matchInfo.Duration == 0 && m.Level != "" {
 				//changing map without winning
-				matchInfo.Duration = uint32(uint64(m.Time.Unix()) - matchInfo.StartedAt)
+				matchInfo.Duration = uint32(getAdjustedTime(m.Time.Unix()) - matchInfo.StartedAt)
 			}
 		case insurgencylog.ServerMessage:
 			if m.Text == "quit" {
 				if matchInfo.Duration == 0 {
 					//changing map without winning
-					matchInfo.Duration = uint32(uint64(m.Time.Unix()) - matchInfo.StartedAt)
+					matchInfo.Duration = uint32(getAdjustedTime(m.Time.Unix()) - matchInfo.StartedAt)
 				}
 				//match over
 				break
@@ -340,4 +340,11 @@ where user_id = id`
 	if err != nil {
 		log.Fatal(err)
 	}
+}
+
+const minute = 60
+const hour = 60 * minute
+
+func getAdjustedTime(unixtime int64) uint64 {
+	return uint64(unixtime - 10*hour)
 }
