@@ -12,6 +12,7 @@ import (
 	_ "github.com/lib/pq"
 	"log"
 	insurgencylog "my.com/insurgency-log"
+	"my.com/insurgency-parser/avatars"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -89,6 +90,7 @@ func main() {
 		}
 
 		runUserAllScoreUpdate()
+		updateAvatars()
 
 		time.Sleep(5 * time.Minute)
 	}
@@ -366,4 +368,44 @@ const hour = 60 * minute
 
 func getAdjustedTime(unixtime int64) uint64 {
 	return uint64(unixtime - 10*hour)
+}
+
+func updateAvatars() {
+	rows, err := db.Query("SELECT id FROM users WHERE avatar_hash IS NULL")
+	if err != nil {
+		panic(err)
+	}
+	defer rows.Close()
+
+	userIDs := make([]uint32, 0)
+	for rows.Next() {
+		var id uint32
+		err = rows.Scan(&id)
+		if err != nil {
+			panic(err)
+		}
+		userIDs = append(userIDs, id)
+	}
+	// get any error encountered during iteration
+	err = rows.Err()
+	if err != nil {
+		panic(err)
+	}
+
+	updateQuery := `UPDATE users SET avatar_hash = $1 WHERE id = $2`
+
+	for _, userID := range userIDs {
+		hash, err := avatars.GetAvatar(userID)
+		if err != nil {
+			log.Printf("%v", err)
+			continue
+		}
+
+		_, err = db.Exec(updateQuery, hash, userID)
+		if err != nil {
+			panic(err)
+		}
+
+		time.Sleep(time.Second)
+	}
 }

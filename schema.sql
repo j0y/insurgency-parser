@@ -15,6 +15,7 @@ create table "users"
 (
     id               bigint PRIMARY KEY,
     name             VARCHAR(32) NOT NULL,
+    avatar_hash      CHAR(40)    DEFAULT NULL,
     kills            integer     NOT NULL default 0,
     deaths           integer     NOT NULL default 0,
     fratricide       integer     NOT NULL default 0,
