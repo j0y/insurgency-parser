@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/MrWaggel/gosteamconv"
 	"io/ioutil"
-	"log"
 	"net/http"
 )
 
@@ -26,12 +25,12 @@ func GetAvatar(id uint32) (string, error) {
 
 	res, err := http.Get(fmt.Sprintf("https://steamcommunity.com/profiles/%d/?xml=1", steamID64))
 	if err != nil {
-		log.Fatal(err)
+		return "", err
 	}
 	content, err := ioutil.ReadAll(res.Body)
 	res.Body.Close()
 	if err != nil {
-		log.Fatal(err)
+		return "", err
 	}
 
 	var profile Profile
