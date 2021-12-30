@@ -10,13 +10,13 @@ import (
 const (
 	MedalObjectiveMostKillsCurrent = iota + 1
 	MedalObjectiveHighestKDCurrent
-	MedalObjectiveIWon         // Get 3 wins.
+	MedalObjectiveIWon         // Get 5 wins.
 	MedalObjectiveImOnAStreak  // Get 3 wins in a row.
 	MedalObjectiveTopFragger   // Get the most kills on your team 5 times.
 	MedalObjectiveGoodTeammate // Get a kill/death ratio of over average in 5 matches.
 	MedalObjectiveKnifeExpert
 	MedalObjectivePistolExpert
-	MedalObjectiveAKExpert
+	MedalObjectiveBoltExpert
 	MedalObjectiveRifleExpert
 	MedalObjectiveExplosivesExpert
 	MedalObjectiveOneManArmy // complete map alone
@@ -38,7 +38,7 @@ var medals = []int{
 	MedalObjectiveGoodTeammate,
 	MedalObjectiveKnifeExpert,
 	MedalObjectivePistolExpert,
-	MedalObjectiveAKExpert,
+	MedalObjectiveBoltExpert,
 	MedalObjectiveRifleExpert,
 	MedalObjectiveExplosivesExpert,
 	MedalObjectiveOneManArmy,
