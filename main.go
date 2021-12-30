@@ -13,6 +13,8 @@ import (
 	"log"
 	insurgencylog "my.com/insurgency-log"
 	"my.com/insurgency-parser/avatars"
+	"my.com/insurgency-parser/dbp"
+	"my.com/insurgency-parser/medals"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -47,7 +49,6 @@ func (a weaponStatsStruct) Value() (driver.Value, error) {
 }
 
 var parsedFiles = make(map[string]struct{})
-var db *sql.DB
 
 func main() {
 	err := godotenv.Load()
@@ -55,11 +56,11 @@ func main() {
 		log.Fatal(err)
 	}
 
-	db, err = sql.Open("postgres", os.Getenv("PSQL_CONN"))
+	dbp.DB, err = sql.Open("postgres", os.Getenv("PSQL_CONN"))
 	if err != nil {
 		panic(err)
 	}
-	defer db.Close()
+	defer dbp.DB.Close()
 
 	for {
 		err := filepath.Walk("logs",
@@ -90,6 +91,7 @@ func main() {
 		}
 
 		runUserAllScoreUpdate()
+		medals.UpdateMedals()
 		updateAvatars()
 
 		time.Sleep(5 * time.Minute)
@@ -244,10 +246,10 @@ func getOrCreateMatchID(matchInfo matchInfoStruct) uint32 {
 	updateQuery := `UPDATE matches SET rounds = $1, duration =$2, won = $3 WHERE id = $4`
 
 	var matchID uint32
-	err := db.QueryRow(selectQuery, matchInfo.Ip, matchInfo.StartedAt, matchInfo.Map).Scan(&matchID)
+	err := dbp.DB.QueryRow(selectQuery, matchInfo.Ip, matchInfo.StartedAt, matchInfo.Map).Scan(&matchID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			err = db.QueryRow(insertQuery, matchInfo.Ip, matchInfo.StartedAt, matchInfo.Map, matchInfo.Rounds, matchInfo.Duration, matchInfo.Won).Scan(&matchID)
+			err = dbp.DB.QueryRow(insertQuery, matchInfo.Ip, matchInfo.StartedAt, matchInfo.Map, matchInfo.Rounds, matchInfo.Duration, matchInfo.Won).Scan(&matchID)
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -256,7 +258,7 @@ func getOrCreateMatchID(matchInfo matchInfoStruct) uint32 {
 		}
 	}
 
-	_, err = db.Exec(updateQuery, matchInfo.Rounds, matchInfo.Duration, matchInfo.Won, matchID)
+	_, err = dbp.DB.Exec(updateQuery, matchInfo.Rounds, matchInfo.Duration, matchInfo.Won, matchID)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -269,10 +271,10 @@ func checkOrCreateUser(userID int, name string) error {
 	insertQuery := `INSERT INTO users (id, name) VALUES ($1, $2)`
 
 	var dummy int
-	err := db.QueryRow(userQuery, userID).Scan(&dummy)
+	err := dbp.DB.QueryRow(userQuery, userID).Scan(&dummy)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			_, err = db.Exec(insertQuery, userID, name)
+			_, err = dbp.DB.Exec(insertQuery, userID, name)
 			if err != nil {
 				return err
 			}
@@ -289,7 +291,7 @@ func insertUserStats(matchID uint32, userID int, stats playerStatsStruct) error 
 VALUES ($1, $2, $3, $4, $5, $6)
 ON CONFLICT(match_id, user_id) DO UPDATE SET kills = $3, deaths = $4, fratricide = $5, weapon_stats = $6;`
 
-	_, err := db.Exec(insertQuery, matchID, userID, stats.Kills, stats.Deaths, stats.Fratricide, stats.WeaponStats)
+	_, err := dbp.DB.Exec(insertQuery, matchID, userID, stats.Kills, stats.Deaths, stats.Fratricide, stats.WeaponStats)
 	if err != nil {
 		return err
 	}
@@ -303,7 +305,7 @@ set kills = a.total
     from (select user_id, sum(kills) as total from match_user_stats group by user_id) a
 WHERE users.id = a.user_id;`
 
-	_, err := db.Exec(kills)
+	_, err := dbp.DB.Exec(kills)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -313,7 +315,7 @@ set deaths = a.total
     from (select user_id, sum(deaths) as total from match_user_stats group by user_id) a
 WHERE users.id = a.user_id;`
 
-	_, err = db.Exec(deaths)
+	_, err = dbp.DB.Exec(deaths)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -323,7 +325,7 @@ set fratricide = a.total
     from (select user_id, sum(fratricide) as total from match_user_stats group by user_id) a
 WHERE users.id = a.user_id;`
 
-	_, err = db.Exec(frats)
+	_, err = dbp.DB.Exec(frats)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -332,7 +334,7 @@ WHERE users.id = a.user_id;`
 set kd = cast(kills as decimal)/deaths
 where kills > 100 and deaths != 0;`
 
-	_, err = db.Exec(kd)
+	_, err = dbp.DB.Exec(kd)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -341,7 +343,7 @@ where kills > 100 and deaths != 0;`
 set kd = 9999
 where kills > 100 and deaths = 0`
 
-	_, err = db.Exec(kdmax)
+	_, err = dbp.DB.Exec(kdmax)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -357,7 +359,7 @@ from (
 group by user_id) stats
 where user_id = id`
 
-	_, err = db.Exec(allWeaponStats)
+	_, err = dbp.DB.Exec(allWeaponStats)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -371,7 +373,7 @@ func getAdjustedTime(unixtime int64) uint64 {
 }
 
 func updateAvatars() {
-	rows, err := db.Query("SELECT id FROM users WHERE avatar_hash IS NULL")
+	rows, err := dbp.DB.Query("SELECT id FROM users WHERE avatar_hash IS NULL")
 	if err != nil {
 		panic(err)
 	}
@@ -401,7 +403,7 @@ func updateAvatars() {
 			continue
 		}
 
-		_, err = db.Exec(updateQuery, hash, userID)
+		_, err = dbp.DB.Exec(updateQuery, hash, userID)
 		if err != nil {
 			panic(err)
 		}

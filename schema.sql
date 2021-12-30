@@ -15,7 +15,7 @@ create table "users"
 (
     id               bigint PRIMARY KEY,
     name             VARCHAR(32) NOT NULL,
-    avatar_hash      CHAR(40)    DEFAULT NULL,
+    avatar_hash      CHAR(40)             DEFAULT NULL,
     kills            integer     NOT NULL default 0,
     deaths           integer     NOT NULL default 0,
     fratricide       integer     NOT NULL default 0,
@@ -39,6 +39,18 @@ create table "match_user_stats"
     FOREIGN KEY (match_id) REFERENCES matches (id) ON DELETE CASCADE ON UPDATE CASCADE,
     FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE ON UPDATE CASCADE,
     UNIQUE (match_id, user_id)
+)
+
+create table "user_medals"
+(
+    user_id     bigint  NOT NULL,
+    medal_id    integer NOT NULL,
+    value       integer          default NULL,
+    current     bool    NOT NULL default false,
+    inserted_at bigint  NOT NULL DEFAULT date_part('epoch'::text, now()),
+
+    FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE ON UPDATE CASCADE,
+    UNIQUE (user_id, medal_id)
 )
 
 
