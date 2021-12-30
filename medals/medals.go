@@ -89,7 +89,6 @@ from (
            AND mus.kills > 20
          group by users.id, mus.kills) a
 GROUP BY id
-
 `
 	rows, err := dbp.DB.Query(wonMatchesQuery)
 	if err != nil {
@@ -135,8 +134,9 @@ GROUP BY id
 				if err != nil {
 					return err
 				}
+			} else {
+				return err
 			}
-			return err
 		} else {
 			if medalKills < userStat.MaxKills {
 				updateQuery := `UPDATE user_medals SET value = $1 WHERE user_id = $2 AND medal_id = $3`
@@ -229,8 +229,10 @@ func checkMostKills() error {
 			if err != nil {
 				return err
 			}
+			return nil
+		} else {
+			return err
 		}
-		return err
 	}
 
 	if medalUserID == userID {
@@ -256,8 +258,9 @@ func checkMostKills() error {
 					if err != nil {
 						return err
 					}
+				} else {
+					return err
 				}
-				return err
 			} else {
 				//updating old medal
 				updateQuery := `UPDATE user_medals SET value = $1, current = TRUE WHERE user_id = $2 AND medal_id = $3 AND current = FALSE`
