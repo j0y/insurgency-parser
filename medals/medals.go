@@ -158,10 +158,12 @@ SELECT users.id, COUNT(*)
 from users
          LEFT JOIN match_user_stats mus on users.id = mus.user_id
          LEFT JOIN matches m on mus.match_id = m.id
+         LEFT JOIN user_medals um on users.id = um.user_id AND medal_id = $1
 WHERE m.won = true
+  AND um.user_id IS NULL
 group by users.id
 `
-	rows, err := dbp.DB.Query(wonMatchesQuery)
+	rows, err := dbp.DB.Query(wonMatchesQuery, MedalObjectiveIWon)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil

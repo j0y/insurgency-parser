@@ -47,7 +47,6 @@ create table "user_medals"
     medal_id    integer NOT NULL,
     value       integer          default NULL,
     current     bool    NOT NULL default false,
-    inserted_at bigint  NOT NULL DEFAULT date_part('epoch'::text, now()),
 
     FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE ON UPDATE CASCADE,
     UNIQUE (user_id, medal_id)
