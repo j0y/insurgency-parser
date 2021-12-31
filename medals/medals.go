@@ -77,19 +77,104 @@ func UpdateMedals() {
 			if err != nil {
 				log.Fatal(err)
 			}
+		case MedalObjectivePistolExpert:
+			err := checkPistolExpert()
+			if err != nil {
+				log.Fatal(err)
+			}
+		case MedalObjectiveBoltExpert:
+			err := checkBoltExpert()
+			if err != nil {
+				log.Fatal(err)
+			}
+		case MedalObjectiveExplosivesExpert:
+			err := checkExplosivesExpert()
+			if err != nil {
+				log.Fatal(err)
+			}
 		}
 	}
 }
 
+func checkExplosivesExpert() error {
+	explosExpertsQuery := `
+SELECT users.id
+from users
+         LEFT JOIN user_medals um on users.id = um.user_id AND medal_id = $1
+WHERE um.user_id IS NULL
+  AND ((all_weapon_stats -> 'grenade_f1')::int + (all_weapon_stats -> 'grenade_ied')::int +
+       (all_weapon_stats -> 'grenade_m67')::int + (all_weapon_stats -> 'grenade_c4')::int +
+       (all_weapon_stats -> 'grenade_mk2')::int + (all_weapon_stats -> 'mortar_piat')::int +
+       (all_weapon_stats -> 'rocket_rpg7')::int + (all_weapon_stats -> 'rocket_at4')::int +
+       (all_weapon_stats -> 'grenade_m203_he')::int +
+       (all_weapon_stats -> 'grenade_rifle_enfield')::int + (all_weapon_stats -> 'grenade_gp25_he')::int +
+       (all_weapon_stats -> 'grenade_rifle_k98')::int + (all_weapon_stats -> 'grenade_gp25_lvg')::int) >= 1000
+`
+
+	err := getIDAndAwardMedal(explosExpertsQuery, MedalObjectiveExplosivesExpert)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func checkBoltExpert() error {
+	boltExpertsQuery := `
+SELECT users.id
+from users
+         LEFT JOIN user_medals um on users.id = um.user_id AND medal_id = $1
+WHERE um.user_id IS NULL
+  AND ((all_weapon_stats -> 'mosin')::int + (all_weapon_stats -> 'k98')::int + (all_weapon_stats -> 'springfield')::int +
+       (all_weapon_stats -> 'enfield')::int + (all_weapon_stats -> 'm1garand')::int) >= 1000
+`
+
+	err := getIDAndAwardMedal(boltExpertsQuery, MedalObjectiveBoltExpert)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func checkPistolExpert() error {
+	pistolExpertsQuery := `
+SELECT users.id
+from users
+         LEFT JOIN user_medals um on users.id = um.user_id AND medal_id = $1
+WHERE um.user_id IS NULL
+  AND ((all_weapon_stats -> 'deagle')::int + (all_weapon_stats -> 'sw500')::int + (all_weapon_stats -> 'makarov')::int +
+       (all_weapon_stats -> 'model10')::int + (all_weapon_stats -> 'welrod')::int +
+       (all_weapon_stats -> 'browninghp')::int) >= 500
+`
+
+	err := getIDAndAwardMedal(pistolExpertsQuery, MedalObjectivePistolExpert)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func checkKnifeExpert() error {
-	wonMatchesQuery := `
+	knifeExpertsQuery := `
 SELECT users.id
 from users
          LEFT JOIN user_medals um on users.id = um.user_id AND medal_id = $1
 WHERE um.user_id IS NULL
   AND (all_weapon_stats -> 'gurkha')::int >= 100
 `
-	rows, err := dbp.DB.Query(wonMatchesQuery, MedalObjectiveKnifeExpert)
+
+	err := getIDAndAwardMedal(knifeExpertsQuery, MedalObjectiveKnifeExpert)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func getIDAndAwardMedal(query string, medal int) error {
+	rows, err := dbp.DB.Query(query, medal)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil
@@ -117,7 +202,7 @@ WHERE um.user_id IS NULL
 
 	for _, ID := range userStats {
 		insertQuery := `INSERT INTO user_medals (user_id, medal_id) VALUES ($1, $2)`
-		_, err = dbp.DB.Exec(insertQuery, ID, MedalObjectiveKnifeExpert)
+		_, err = dbp.DB.Exec(insertQuery, ID, medal)
 		if err != nil {
 			return err
 		}
