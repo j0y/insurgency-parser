@@ -72,8 +72,58 @@ func UpdateMedals() {
 			if err != nil {
 				log.Fatal(err)
 			}
+		case MedalObjectiveKnifeExpert:
+			err := checkKnifeExpert()
+			if err != nil {
+				log.Fatal(err)
+			}
 		}
 	}
+}
+
+func checkKnifeExpert() error {
+	wonMatchesQuery := `
+SELECT users.id
+from users
+         LEFT JOIN user_medals um on users.id = um.user_id AND medal_id = $1
+WHERE um.user_id IS NULL
+  AND (all_weapon_stats -> 'gurkha')::int >= 100
+`
+	rows, err := dbp.DB.Query(wonMatchesQuery, MedalObjectiveKnifeExpert)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil
+		}
+		return err
+	}
+	defer rows.Close()
+
+	userStats := make([]uint32, 0)
+	for rows.Next() {
+		var ID uint32
+		err = rows.Scan(&ID)
+		if err != nil {
+			return err
+		}
+
+		userStats = append(userStats, ID)
+	}
+
+	// get any error encountered during iteration
+	err = rows.Err()
+	if err != nil {
+		return err
+	}
+
+	for _, ID := range userStats {
+		insertQuery := `INSERT INTO user_medals (user_id, medal_id) VALUES ($1, $2)`
+		_, err = dbp.DB.Exec(insertQuery, ID, MedalObjectiveKnifeExpert)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func checkDieHard() error {
