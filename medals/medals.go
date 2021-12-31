@@ -145,7 +145,9 @@ from users
 WHERE um.user_id IS NULL
   AND ((all_weapon_stats -> 'deagle')::int + (all_weapon_stats -> 'sw500')::int + (all_weapon_stats -> 'makarov')::int +
        (all_weapon_stats -> 'model10')::int + (all_weapon_stats -> 'welrod')::int +
-       (all_weapon_stats -> 'browninghp')::int) >= 1000
+       (all_weapon_stats -> 'browninghp')::int + (all_weapon_stats -> 'sw1917')::int +
+       (all_weapon_stats -> 'mr73')::int + (all_weapon_stats -> 'ots33')::int + (all_weapon_stats -> 'glock18')::int) >=
+      1000
 `
 
 	err := getIDAndAwardMedal(pistolExpertsQuery, MedalObjectivePistolExpert)
