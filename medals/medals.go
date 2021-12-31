@@ -108,7 +108,7 @@ WHERE um.user_id IS NULL
        (all_weapon_stats -> 'rocket_rpg7')::int + (all_weapon_stats -> 'rocket_at4')::int +
        (all_weapon_stats -> 'grenade_m203_he')::int +
        (all_weapon_stats -> 'grenade_rifle_enfield')::int + (all_weapon_stats -> 'grenade_gp25_he')::int +
-       (all_weapon_stats -> 'grenade_rifle_k98')::int + (all_weapon_stats -> 'grenade_gp25_lvg')::int) >= 1000
+       (all_weapon_stats -> 'grenade_rifle_k98')::int + (all_weapon_stats -> 'grenade_gp25_lvg')::int + (all_weapon_stats -> 'm590')::int) >= 1000
 `
 
 	err := getIDAndAwardMedal(explosExpertsQuery, MedalObjectiveExplosivesExpert)
