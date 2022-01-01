@@ -92,8 +92,36 @@ func UpdateMedals() {
 			if err != nil {
 				log.Fatal(err)
 			}
+		case MedalObjectiveRifleExpert:
+			err := checkRifleExpert()
+			if err != nil {
+				log.Fatal(err)
+			}
 		}
 	}
+}
+
+func checkRifleExpert() error {
+	rifleExpertsQuery := `
+SELECT users.id
+from users
+         LEFT JOIN user_medals um on users.id = um.user_id AND medal_id = $1
+WHERE um.user_id IS NULL
+  AND ((all_weapon_stats -> 'akm')::int + (all_weapon_stats -> 'aks74u')::int +
+       (all_weapon_stats -> 'galil_sar')::int + (all_weapon_stats -> 'ak74')::int +
+       (all_weapon_stats -> 'asval')::int + (all_weapon_stats -> 'mp40')::int +
+       (all_weapon_stats -> 'ppsh')::int + (all_weapon_stats -> 'fal')::int +
+       (all_weapon_stats -> 'svd')::int +
+       (all_weapon_stats -> 'mp7')::int + (all_weapon_stats -> 'm16a4')::int +
+       (all_weapon_stats -> 'sks')::int + (all_weapon_stats -> 'm1a1')::int + (all_weapon_stats -> 'ump45')::int + (all_weapon_stats -> 'aks74u')::int) >= 5000
+`
+
+	err := getIDAndAwardMedal(rifleExpertsQuery, MedalObjectiveRifleExpert)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func checkExplosivesExpert() error {
@@ -126,7 +154,7 @@ from users
          LEFT JOIN user_medals um on users.id = um.user_id AND medal_id = $1
 WHERE um.user_id IS NULL
   AND ((all_weapon_stats -> 'mosin')::int + (all_weapon_stats -> 'k98')::int + (all_weapon_stats -> 'springfield')::int +
-       (all_weapon_stats -> 'enfield')::int + (all_weapon_stats -> 'm1garand')::int) >= 1000
+       (all_weapon_stats -> 'enfield')::int + (all_weapon_stats -> 'm1garand')::int + (all_weapon_stats -> 'CS5')::int) >= 1000
 `
 
 	err := getIDAndAwardMedal(boltExpertsQuery, MedalObjectiveBoltExpert)
