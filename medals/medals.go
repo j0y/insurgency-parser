@@ -107,13 +107,14 @@ SELECT users.id
 from users
          LEFT JOIN user_medals um on users.id = um.user_id AND medal_id = $1
 WHERE um.user_id IS NULL
-  AND ((all_weapon_stats -> 'akm')::int + (all_weapon_stats -> 'aks74u')::int +
-       (all_weapon_stats -> 'galil_sar')::int + (all_weapon_stats -> 'ak74')::int +
-       (all_weapon_stats -> 'asval')::int + (all_weapon_stats -> 'mp40')::int +
-       (all_weapon_stats -> 'ppsh')::int + (all_weapon_stats -> 'fal')::int +
-       (all_weapon_stats -> 'svd')::int +
-       (all_weapon_stats -> 'mp7')::int + (all_weapon_stats -> 'm16a4')::int +
-       (all_weapon_stats -> 'sks')::int + (all_weapon_stats -> 'm1a1')::int + (all_weapon_stats -> 'ump45')::int + (all_weapon_stats -> 'aks74u')::int) >= 5000
+  AND (COALESCE((all_weapon_stats -> 'akm')::int, 0) + COALESCE((all_weapon_stats -> 'aks74u')::int, 0) +
+       COALESCE((all_weapon_stats -> 'galil_sar')::int, 0) + COALESCE((all_weapon_stats -> 'ak74')::int, 0) +
+       COALESCE((all_weapon_stats -> 'asval')::int, 0) + COALESCE((all_weapon_stats -> 'mp40')::int, 0) +
+       COALESCE((all_weapon_stats -> 'ppsh')::int, 0) + COALESCE((all_weapon_stats -> 'fal')::int, 0) +
+       COALESCE((all_weapon_stats -> 'svd')::int, 0) +
+       COALESCE((all_weapon_stats -> 'mp7')::int, 0) + COALESCE((all_weapon_stats -> 'm16a4')::int, 0) +
+       COALESCE((all_weapon_stats -> 'sks')::int, 0) + COALESCE((all_weapon_stats -> 'm1a1')::int, 0) +
+       COALESCE((all_weapon_stats -> 'ump45')::int, 0) + COALESCE((all_weapon_stats -> 'aks74u')::int, 0)) >= 5000
 `
 
 	err := getIDAndAwardMedal(rifleExpertsQuery, MedalObjectiveRifleExpert)
@@ -130,13 +131,13 @@ SELECT users.id
 from users
          LEFT JOIN user_medals um on users.id = um.user_id AND medal_id = $1
 WHERE um.user_id IS NULL
-  AND ((all_weapon_stats -> 'grenade_f1')::int + (all_weapon_stats -> 'grenade_ied')::int +
-       (all_weapon_stats -> 'grenade_m67')::int + (all_weapon_stats -> 'grenade_c4')::int +
-       (all_weapon_stats -> 'grenade_mk2')::int + (all_weapon_stats -> 'mortar_piat')::int +
-       (all_weapon_stats -> 'rocket_rpg7')::int + (all_weapon_stats -> 'rocket_at4')::int +
-       (all_weapon_stats -> 'grenade_m203_he')::int +
-       (all_weapon_stats -> 'grenade_rifle_enfield')::int + (all_weapon_stats -> 'grenade_gp25_he')::int +
-       (all_weapon_stats -> 'grenade_rifle_k98')::int + (all_weapon_stats -> 'grenade_gp25_lvg')::int + (all_weapon_stats -> 'm590')::int) >= 1000
+  AND (COALESCE((all_weapon_stats -> 'grenade_f1')::int, 0) + COALESCE((all_weapon_stats -> 'grenade_ied')::int, 0) +
+       COALESCE((all_weapon_stats -> 'grenade_m67')::int, 0) + COALESCE((all_weapon_stats -> 'grenade_c4')::int, 0) +
+       COALESCE((all_weapon_stats -> 'grenade_mk2')::int, 0) + COALESCE((all_weapon_stats -> 'mortar_piat')::int, 0) +
+       COALESCE((all_weapon_stats -> 'rocket_rpg7')::int, 0) + COALESCE((all_weapon_stats -> 'rocket_at4')::int, 0) +
+       COALESCE((all_weapon_stats -> 'grenade_m203_he')::int, 0) +
+       COALESCE((all_weapon_stats -> 'grenade_rifle_enfield')::int, 0) + COALESCE((all_weapon_stats -> 'grenade_gp25_he')::int, 0) +
+       COALESCE((all_weapon_stats -> 'grenade_rifle_k98')::int, 0) + COALESCE((all_weapon_stats -> 'grenade_gp25_lvg')::int, 0) + COALESCE((all_weapon_stats -> 'm590')::int, 0)) >= 1000
 `
 
 	err := getIDAndAwardMedal(explosExpertsQuery, MedalObjectiveExplosivesExpert)
@@ -153,8 +154,8 @@ SELECT users.id
 from users
          LEFT JOIN user_medals um on users.id = um.user_id AND medal_id = $1
 WHERE um.user_id IS NULL
-  AND ((all_weapon_stats -> 'mosin')::int + (all_weapon_stats -> 'k98')::int + (all_weapon_stats -> 'springfield')::int +
-       (all_weapon_stats -> 'enfield')::int + (all_weapon_stats -> 'm1garand')::int + (all_weapon_stats -> 'CS5')::int) >= 1000
+  AND (COALESCE((all_weapon_stats -> 'mosin')::int, 0) + COALESCE((all_weapon_stats -> 'k98')::int, 0) + COALESCE((all_weapon_stats -> 'springfield')::int, 0) +
+       COALESCE((all_weapon_stats -> 'enfield')::int, 0) + COALESCE((all_weapon_stats -> 'm1garand')::int, 0) + COALESCE((all_weapon_stats -> 'CS5')::int, 0)) >= 1000
 `
 
 	err := getIDAndAwardMedal(boltExpertsQuery, MedalObjectiveBoltExpert)
@@ -171,10 +172,10 @@ SELECT users.id
 from users
          LEFT JOIN user_medals um on users.id = um.user_id AND medal_id = $1
 WHERE um.user_id IS NULL
-  AND ((all_weapon_stats -> 'deagle')::int + (all_weapon_stats -> 'sw500')::int + (all_weapon_stats -> 'makarov')::int +
-       (all_weapon_stats -> 'model10')::int + (all_weapon_stats -> 'welrod')::int +
-       (all_weapon_stats -> 'browninghp')::int + (all_weapon_stats -> 'sw1917')::int +
-       (all_weapon_stats -> 'mr73')::int + (all_weapon_stats -> 'ots33')::int + (all_weapon_stats -> 'glock18')::int) >=
+  AND (COALESCE((all_weapon_stats -> 'deagle')::int, 0) + COALESCE((all_weapon_stats -> 'sw500')::int, 0) + COALESCE((all_weapon_stats -> 'makarov')::int, 0) +
+       COALESCE((all_weapon_stats -> 'model10')::int, 0) + COALESCE((all_weapon_stats -> 'welrod')::int, 0) +
+       COALESCE((all_weapon_stats -> 'browninghp')::int, 0) + COALESCE((all_weapon_stats -> 'sw1917')::int, 0) +
+       COALESCE((all_weapon_stats -> 'mr73')::int, 0) + COALESCE((all_weapon_stats -> 'ots33')::int, 0) + COALESCE((all_weapon_stats -> 'glock18')::int, 0)) >=
       1000
 `
 
@@ -192,7 +193,7 @@ SELECT users.id
 from users
          LEFT JOIN user_medals um on users.id = um.user_id AND medal_id = $1
 WHERE um.user_id IS NULL
-  AND (all_weapon_stats -> 'gurkha')::int >= 100
+  AND COALESCE((all_weapon_stats -> 'gurkha')::int, 0) >= 100
 `
 
 	err := getIDAndAwardMedal(knifeExpertsQuery, MedalObjectiveKnifeExpert)
