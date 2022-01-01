@@ -109,12 +109,14 @@ from users
 WHERE um.user_id IS NULL
   AND (COALESCE((all_weapon_stats -> 'akm')::int, 0) + COALESCE((all_weapon_stats -> 'aks74u')::int, 0) +
        COALESCE((all_weapon_stats -> 'galil_sar')::int, 0) + COALESCE((all_weapon_stats -> 'ak74')::int, 0) +
-       COALESCE((all_weapon_stats -> 'asval')::int, 0) + COALESCE((all_weapon_stats -> 'mp40')::int, 0) +
+       COALESCE((all_weapon_stats -> 'asval')::int, 0) + COALESCE((all_weapon_stats -> 'arx160')::int, 0) +
        COALESCE((all_weapon_stats -> 'ppsh')::int, 0) + COALESCE((all_weapon_stats -> 'fal')::int, 0) +
        COALESCE((all_weapon_stats -> 'svd')::int, 0) +
-       COALESCE((all_weapon_stats -> 'mp7')::int, 0) + COALESCE((all_weapon_stats -> 'm16a4')::int, 0) +
+       COALESCE((all_weapon_stats -> 'm14')::int, 0) + COALESCE((all_weapon_stats -> 'm16a4')::int, 0) +
        COALESCE((all_weapon_stats -> 'sks')::int, 0) + COALESCE((all_weapon_stats -> 'm1a1')::int, 0) +
-       COALESCE((all_weapon_stats -> 'ump45')::int, 0) + COALESCE((all_weapon_stats -> 'aks74u')::int, 0)) >= 5000
+       COALESCE((all_weapon_stats -> 'ump45')::int, 0) + COALESCE((all_weapon_stats -> 'aks74u')::int, 0) + 
+       COALESCE((all_weapon_stats -> 'akalpha')::int, 0) + COALESCE((all_weapon_stats -> 'akmod')::int, 0) + 
+       COALESCE((all_weapon_stats -> 'galil')::int, 0) + COALESCE((all_weapon_stats -> 'm4a1')::int, 0)) >= 5000
 `
 
 	err := getIDAndAwardMedal(rifleExpertsQuery, MedalObjectiveRifleExpert)
