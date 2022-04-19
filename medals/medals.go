@@ -3,8 +3,8 @@ package medals
 import (
 	"database/sql"
 	"errors"
+	"github.com/j0y/insurgency-parser/dbp"
 	"log"
-	"my.com/insurgency-parser/dbp"
 )
 
 const (
